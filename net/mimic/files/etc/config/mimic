@@ -1,0 +1,14 @@
+config mimic 'wan'
+	option enabled '0'
+	option interface 'wan'         # logical network interface
+	list filter 'remote=192.0.2.1:1234'
+	# option anti_gro '1'
+	# option link_type 'none'      # eth|none — 'none' for PPP/TUN (default eth)
+	# option xdp_mode 'skb'        # skb|native (default: native if supported)
+	# option padding 'random'      # bytes or 'random'
+	# option max_window '0'
+	# option handshake '2:4'       # i:r — connection retry behaviour
+	# option keepalive '25:60:3:0' # t:i:r:s
+	# option verbose '0'
+	# option quiet '0'
+	# option config_file '/etc/mimic/wan.conf'  # bypass UCI rendering

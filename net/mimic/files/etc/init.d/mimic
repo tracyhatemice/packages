@@ -1,0 +1,139 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+USE_PROCD=1
+
+PROG=/usr/bin/mimic
+GEN_DIR=/var/run/mimic
+
+. /lib/functions/network.sh
+
+# Emit "key=value" only when the UCI option is set, so mimic defaults apply.
+render_option() {
+	local val
+	config_get val "${1}" "${2}"
+	[ -n "${val}" ] && echo "${2}=${val}" >> "${3}"
+}
+
+render_bool() {
+	local raw val
+	config_get raw "${1}" "${2}"
+	[ -n "${raw}" ] || return 0
+	config_get_bool val "${1}" "${2}" 0
+	if [ "${val}" -eq 1 ]; then
+		echo "${2}=true" >> "${3}"
+	else
+		echo "${2}=false" >> "${3}"
+	fi
+}
+
+render_filter() {
+	echo "filter=${1}" >> "${2}"
+}
+
+# Render the instance's mimic -F config file from its UCI section.
+render_config() {
+	local cfg="${1}" out="${2}"
+	local key
+
+	mkdir -p "${GEN_DIR}"
+	: > "${out}"
+	for key in link_type xdp_mode handshake keepalive padding; do
+		render_option "${cfg}" "${key}" "${out}"
+	done
+	for key in max_window anti_gro; do
+		render_bool "${cfg}" "${key}" "${out}"
+	done
+	config_list_foreach "${cfg}" filter render_filter "${out}"
+}
+
+start_instance() {
+	local cfg="${1}"
+	local enabled interface config_file dev verbose quiet
+
+	config_get_bool enabled "${cfg}" enabled 0
+	[ "${enabled}" -eq 1 ] || return 0
+
+	config_get interface "${cfg}" interface
+	[ -n "${interface}" ] || {
+		logger -t mimic "Section '${cfg}' missing 'interface', skipping"
+		return 0
+	}
+
+	# Logical interface -> netdev; if down, the iface trigger starts us later.
+	network_get_device dev "${interface}" && [ -n "${dev}" ] || return 0
+
+	# A hand-written config_file wins; otherwise render one from UCI.
+	config_get config_file "${cfg}" config_file
+	if [ -n "${config_file}" ]; then
+		[ -r "${config_file}" ] || {
+			logger -t mimic "Config '${config_file}' unreadable, skipping (cfg=${cfg})"
+			return 0
+		}
+	else
+		config_file="${GEN_DIR}/${cfg}.conf"
+		render_config "${cfg}" "${config_file}"
+	fi
+
+	config_get_bool verbose "${cfg}" verbose 0
+	config_get_bool quiet "${cfg}" quiet 0
+
+	procd_open_instance "${cfg}"
+	procd_set_param command "${PROG}" run "${dev}" -F "${config_file}"
+	[ "${verbose}" -eq 1 ] && procd_append_param command -v
+	[ "${quiet}" -eq 1 ] && procd_append_param command -q
+	procd_set_param respawn 3600 5 5
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+# Restart/stop each enabled instance on its logical interface's up/down events.
+add_iface_trigger() {
+	local cfg="${1}"
+	local enabled interface
+
+	config_get_bool enabled "${cfg}" enabled 0
+	[ "${enabled}" -eq 1 ] || return 0
+	config_get interface "${cfg}" interface
+	[ -n "${interface}" ] || return 0
+
+	procd_add_interface_trigger "interface.*.up" "${interface}" \
+		/etc/init.d/mimic start "${cfg}"
+	procd_add_interface_trigger "interface.*.down" "${interface}" \
+		/etc/init.d/mimic stop "${cfg}"
+}
+
+service_triggers() {
+	procd_add_reload_trigger "mimic"
+	config_load mimic
+	config_foreach add_iface_trigger mimic
+}
+
+section_match() {
+	[ "${1}" = "${instance}" ] && instance_found=1
+}
+
+# `service mimic <action> [<section>]` acts on a single instance when given.
+start_service() {
+	local instance="${1}"
+
+	config_load mimic
+	if [ -n "${instance}" ]; then
+		local instance_found=0
+		config_foreach section_match mimic
+		[ "${instance_found}" -eq 1 ] || {
+			logger -t mimic "Section '${instance}' not found in /etc/config/mimic"
+			return 1
+		}
+		start_instance "${instance}"
+	else
+		config_foreach start_instance mimic
+	fi
+}
+
+# mimic has no SIGHUP handler; reload is stop+start.
+reload_service() {
+	stop "${@}"
+	start "${@}"
+}

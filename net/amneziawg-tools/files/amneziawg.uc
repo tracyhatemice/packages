@@ -5,6 +5,27 @@ import * as fs from 'fs';
 
 const AWG = '/usr/bin/awg';
 
+// AmneziaWG obfuscation parameters: UCI option name -> awg config key.
+// Adding a parameter in a future AmneziaWG release is a one-line change here.
+const AWG_PARAMS = [
+	[ 'awg_jc',   'Jc'   ],
+	[ 'awg_jmin', 'Jmin' ],
+	[ 'awg_jmax', 'Jmax' ],
+	[ 'awg_s1',   'S1'   ],
+	[ 'awg_s2',   'S2'   ],
+	[ 'awg_s3',   'S3'   ],
+	[ 'awg_s4',   'S4'   ],
+	[ 'awg_h1',   'H1'   ],
+	[ 'awg_h2',   'H2'   ],
+	[ 'awg_h3',   'H3'   ],
+	[ 'awg_h4',   'H4'   ],
+	[ 'awg_i1',   'I1'   ],
+	[ 'awg_i2',   'I2'   ],
+	[ 'awg_i3',   'I3'   ],
+	[ 'awg_i4',   'I4'   ],
+	[ 'awg_i5',   'I5'   ]
+];
+
 function awg_exists() {
 	return fs.access(AWG, fs.F_OK);
 }
@@ -125,6 +146,12 @@ function proto_setup(proto) {
 
 	if (config.fwmark)
 		awg_config += sprintf('FwMark=%s\n', config.fwmark);
+
+	for (let param in AWG_PARAMS) {
+		let value = config[param[0]];
+		if (value != null && value != '')
+			awg_config += sprintf('%s=%s\n', param[1], value);
+	}
 
 	let metric = int(config.metric);
 

@@ -4,12 +4,12 @@
 # Copyright (C) 2018 Aleksandr V. Piskunov <aleksandr.v.piskunov@gmail.com>.
 # Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 #
-# This watchdog script tries to re-resolve hostnames for inactive WireGuard peers.
+# This watchdog script tries to re-resolve hostnames for inactive AmneziaWG peers.
 # Use it for peers with a frequently changing dynamic IP.
 # persistent_keepalive must be set, recommended value is 25 seconds.
 #
 # Run this script from cron every minute:
-# echo '* * * * * /usr/bin/wireguard_watchdog' >> /etc/crontabs/root
+# echo '* * * * * /usr/bin/amneziawg_watchdog' >> /etc/crontabs/root
 
 # shellcheck disable=SC1091,SC3043
 

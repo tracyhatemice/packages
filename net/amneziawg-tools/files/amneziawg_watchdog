@@ -60,10 +60,10 @@ check_peer_activity() {
   awg set "${iface}" peer "${public_key}" endpoint "${endpoint_host}:${endpoint_port}"
 }
 
-# query ubus for all active wireguard interfaces
+# query ubus for all active AmneziaWG interfaces
 awg_ifaces=$(ubus -S call network.interface dump | jsonfilter -e '@.interface[@.up=true]' | jsonfilter -a -e '@[@.proto="amneziawg"].interface' | tr "\n" " ")
 
-# check every peer in every active wireguard interface
+# check every peer in every active AmneziaWG interface
 config_load network
 for iface in $awg_ifaces; do
   config_foreach check_peer_activity "amneziawg_${iface}" "${iface}"

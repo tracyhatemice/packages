@@ -23,7 +23,20 @@ const AWG_PARAMS = [
 	[ 'awg_i2',   'I2'   ],
 	[ 'awg_i3',   'I3'   ],
 	[ 'awg_i4',   'I4'   ],
-	[ 'awg_i5',   'I5'   ]
+	[ 'awg_i5',   'I5'   ],
+
+	// Added in AmneziaWG 3.0.
+	[ 'awg_header_protection_key',   'HeaderProtectionKey'   ],
+	[ 'awg_content_padding_addition', 'ContentPaddingAddition' ],
+	[ 'awg_rekey_after_time',        'RekeyAfterTime'        ],
+	[ 'awg_rekey_timeout',           'RekeyTimeout'          ],
+	[ 'awg_reject_after_time',       'RejectAfterTime'       ],
+	[ 'awg_keepalive_timeout',       'KeepaliveTimeout'      ],
+	[ 'awg_max_handshake_attempts',  'MaxHandshakeAttempts'  ],
+
+	// Added in AmneziaWG 3.1.
+	[ 'awg_random_trailers',         'RandomTrailers'        ],
+	[ 'awg_disable_cookies',         'DisableCookies'        ]
 ];
 
 function awg_exists() {

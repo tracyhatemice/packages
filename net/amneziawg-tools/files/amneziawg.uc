@@ -7,6 +7,7 @@ const AWG = '/usr/bin/awg';
 
 // AmneziaWG obfuscation parameters: UCI option name -> awg config key.
 // Adding a parameter in a future AmneziaWG release is a one-line change here.
+// A third element marks a boolean parameter, emitted as "on" when set.
 const AWG_PARAMS = [
 	[ 'awg_jc',   'Jc'   ],
 	[ 'awg_jmin', 'Jmin' ],
@@ -35,9 +36,22 @@ const AWG_PARAMS = [
 	[ 'awg_max_handshake_attempts',  'MaxHandshakeAttempts'  ],
 
 	// Added in AmneziaWG 3.1.
-	[ 'awg_random_trailers',         'RandomTrailers'        ],
-	[ 'awg_disable_cookies',         'DisableCookies'        ]
+	[ 'awg_random_trailers',         'RandomTrailers',       true ],
+	[ 'awg_disable_cookies',         'DisableCookies',       true ]
 ];
+
+// awg reads a boolean only as on/off in any case or as a number, and fails
+// the whole config on anything else. Accept UCI's spellings (the truth table
+// of config_get_bool in /lib/functions.sh) as well as awg's own, so that
+// "true" works and a value awg already took as on, such as "ON", stays on.
+function flag_enabled(value) {
+	if (type(value) != 'string')
+		return false;
+
+	return (value in [ '1', 'on', 'true', 'yes', 'enabled' ]) ||
+		match(value, /^on$/i) != null ||
+		match(value, /^[0-9]*[1-9][0-9]*$/) != null;
+}
 
 function awg_exists() {
 	return fs.access(AWG, fs.F_OK);
@@ -162,7 +176,11 @@ function proto_setup(proto) {
 
 	for (let param in AWG_PARAMS) {
 		let value = config[param[0]];
-		if (value != null && value != '')
+		if (param[2]) {
+			if (flag_enabled(value))
+				awg_config += sprintf('%s=on\n', param[1]);
+		}
+		else if (value != null && value != '')
 			awg_config += sprintf('%s=%s\n', param[1], value);
 	}
 

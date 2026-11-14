@@ -7,13 +7,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=amneziawg
-PKG_VERSION:=3.1.20260906
+# Upstream tags this release v3.1.20261113-02. apk rejects a hyphen inside a
+# version, so the package uses apk's patch-level suffix instead, which sorts
+# above 3.1.20261113.
+PKG_REALVERSION:=3.1.20261113-02
+PKG_VERSION:=3.1.20261113_p2
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/amnezia-vpn/amneziawg-linux-kernel-module.git
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_MIRROR_HASH:=1d389f8511c95be8f457d53aa54aa8674b6249202a0daa6be066ddad5627b17f
+PKG_SOURCE_VERSION:=v$(PKG_REALVERSION)
+PKG_MIRROR_HASH:=d18a874643cd065945f0499176c738aec3c9b9e15720582611913210821fe861
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
